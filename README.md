@@ -1,1 +1,1 @@
-# CS-353-Fall-2019
+# Project of the CS 353 course, Fall 2019
