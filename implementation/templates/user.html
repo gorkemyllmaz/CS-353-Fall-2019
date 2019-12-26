@@ -15,15 +15,23 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarCollapse">
           <ul class="navbar-nav mr-auto">
-            
+            <li class="nav-item active">
+              <a class="nav-link" href="/apps">View All Apps</a>
+            </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="/users">View All Users</a>
+            </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="/follower">Followers</a>
+            </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="/following">Following</a>
+            </li>
           </ul>
     
           <ul class="navbar-nav ml-auto">
             <li class="nav-item active">
-              <a class="nav-link" href="/login">Login</a>
-          </li>
-            <li class="nav-item active">
-                <a class="nav-link" href="/register">Register</a>
+                <a class="nav-link" href="/">Logout</a>
             </li>
           </ul>
         </div>
@@ -32,7 +40,7 @@
     <br><br><br>
     <div class=container>
         {% block body %}
-          <h2>Welcome to Doodle Play</h2>
+          
         {% endblock %}
     </div>
 
