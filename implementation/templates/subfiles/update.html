@@ -2,7 +2,7 @@
 
 {% block body %}
     {% from "includes/formhelpers.html" import render_field %}
-    <h3>Upload An App</h3>
+    <h3>Update An App</h3>
     <hr>
 
     <form method="post">
@@ -11,6 +11,7 @@
         {{ render_field(form.size, class="form-control") }}
         {{ render_field(form.osVersion, class="form-control") }}
         {{ render_field(form.category, class="form-control") }}
-        <button type="submit" class="btn btn-primary">Upload App</button>
+        {{ render_field(form.description, class="form-control") }}
+        <button type="submit" class="btn btn-primary">Send Update Request</button>
     </form>
 {% endblock %}

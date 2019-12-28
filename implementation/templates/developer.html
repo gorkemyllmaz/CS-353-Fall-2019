@@ -19,7 +19,7 @@
               <a class="nav-link" href="/apps">View All Apps</a>
             </li>
             <li class="nav-item active">
-                <a class="nav-link" href="/developerUpload">Upload an Application</a>
+                <a class="nav-link" href="/uploadApp">Upload an Application</a>
             </li>
           </ul>
     
@@ -33,6 +33,7 @@
     
     <br><br><br>
     <div class=container>
+      {% include "includes/flashMessages.html" %}
         {% block body %}
           
         {% endblock %}
