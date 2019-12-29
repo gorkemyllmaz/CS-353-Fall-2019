@@ -1,5 +1,12 @@
 {% extends "user.html" %}
 
 {% block body %}
+{% from "includes/formhelpers.html" import render_field %}
+<h3>Write Your Message</h3>
+<hr>
 
+<form method="post">
+    {{ render_field(form.message, class="form-control") }}
+    <button type="submit" class="btn btn-primary">Send</button>
+</form>
 {% endblock %}

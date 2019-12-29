@@ -1,5 +1,23 @@
 {% extends "user.html" %}
 
 {% block body %}
+{% from "includes/formhelpers.html" import render_field %}
+    <h3>Followers:</h3>
+    <hr>
+
+{% if followers %}
+    <h4>User</h4>
+    <ul class="list-group">
+        {% for follower in followers %}
+        <li class="list-group-item">{{follower.account2}}</li>
+        <form method="post">
+            <td><a href="/message/{{follower.account2}}" class="btn btn-info">Send Message</a></td>
+        </form>
+        
+        {% endfor %}
+    </ul>
+{% else %}
+<div class="alert alert-danger">There are no followers</div>
+{% endif %}
 
 {% endblock %}

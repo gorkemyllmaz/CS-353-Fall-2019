@@ -46,7 +46,7 @@ class updateForm(Form):
     osVersion = IntegerField("Enter android version", validators=[validators.NumberRange(min=4, max=9)])
     category = StringField("Enter category", validators=[validators.Length(min=4, max=25)])
     description = StringField("Enter description", validators=[validators.Length(min=0, max=200)])
-
+# Approve Restriction Form
 class approveRestrictionForm(Form):
     appName = StringField("Enter app name", validators=[validators.Length(min=4, max=25)])
     ageRestriction = IntegerField("Enter age limit",validators=[validators.NumberRange(min=0, max=99)])
@@ -54,7 +54,14 @@ class approveRestrictionForm(Form):
     osVersion = IntegerField("Enter android version", validators=[validators.NumberRange(min=4, max=9)])
     category = StringField("Enter category", validators=[validators.Length(min=4, max=25)])
     description = StringField("Enter description", validators=[validators.Length(min=0, max=200)])
-    
+
+# Message Form
+class messageForm(Form):
+    message = TextAreaField("Enter Message", validators=[validators.Length(min=0, max=300)])
+
+# Comment Form
+class commentForm(Form):
+    comment = TextAreaField("Enter Comment", validators=[validators.Length(min=0, max=300)])
 #___________________________________________________________________________________________________________________
 app = Flask(__name__)
 # MySQL Connection
@@ -103,7 +110,7 @@ def upload():
 
     return render_template("/subfiles/upload.html", form=form)
 
-# View All Apps
+# View All Apps (DEVELOPER)
 @app.route("/apps", methods=["GET", "POST"])
 @login_required
 def viewAllApps():
@@ -116,6 +123,125 @@ def viewAllApps():
         return render_template("/subfiles/apps.html", apps=apps)
     else:
         return render_template("/subfiles/apps.html")
+
+# View All Apps (USER)
+@app.route("/userApps", methods=["GET", "POST"])
+@login_required
+def userApps():
+    cursor = mysql.connection.cursor()
+    query = "select * from application natural join category_has where application_status='approved' or application_status='approved_with_restrictions'"
+    result = cursor.execute(query)
+
+    if result > 0:
+        apps = cursor.fetchall()
+        return render_template("/subfiles/userApps.html", apps=apps)
+    else:
+        return render_template("/subfiles/userApps.html")
+
+# View All Users
+@app.route("/users", methods=["GET", "POST"])
+@login_required
+def viewAllUsers():
+    cursor = mysql.connection.cursor()
+    query = "select account_id, age, mail from user where account_id <> %s and userType = 0"
+    result = cursor.execute(query,(session["username"],))
+
+    if result > 0:
+        users = cursor.fetchall()
+        return render_template("/subfiles/viewAllUsers.html", users=users)
+    else:
+        return render_template("/subfiles/viewAllUsers.html")
+
+# Followers
+@app.route("/followers")
+@login_required
+def followers():
+    cursor = mysql.connection.cursor()
+    query = "select * from follows where account1 = %s" # account2 = Receiver ?
+    result = cursor.execute(query,(session["username"],))
+
+    if result > 0:
+        followers = cursor.fetchall()
+        return render_template("/subfiles/followers.html", followers=followers)
+    else:
+        return render_template("/subfiles/followers.html")
+
+# Following
+@app.route("/following")
+@login_required
+def following():
+    cursor = mysql.connection.cursor()
+    query = "select * from follows where account2 = %s" # account2 = Receiver ?
+    result = cursor.execute(query,(session["username"],))
+
+    if result > 0:
+        followings = cursor.fetchall()
+        return render_template("/subfiles/following.html", followings=followings)
+    else:
+        return render_template("/subfiles/following.html")
+
+# Messages
+@app.route("/messages")
+@login_required
+def messages():
+    cursor = mysql.connection.cursor()
+    query = "select * from messages where account1 = %s" # account2 = Receiver ?
+    result = cursor.execute(query,(session["username"],))
+
+    if result > 0:
+        messages = cursor.fetchall()
+        return render_template("/subfiles/messages.html", messages=messages)
+    else:
+        return render_template("/subfiles/messages.html")
+# Send Message
+@app.route("/message/<string:id>", methods=["GET", "POST"])
+@login_required
+def sendMessage(id):
+    form = messageForm(request.form)
+
+    if request.method == "POST":
+        message = form.message.data
+        cursor = mysql.connection.cursor()
+        query = "insert into messages values(NULL,%s,%s,%s,CURRENT_TIMESTAMP)"
+        
+        cursor.execute(query,(id, session["username"], message,))
+        mysql.connection.commit()
+        flash("Message Sent", "success")
+        return redirect(url_for("viewAllUsers"))
+    else:
+        return render_template("/subfiles/sendMessage.html", form=form)
+# Follow
+@app.route("/follow/<string:id>")
+@login_required
+def follow(id):
+    cursor = mysql.connection.cursor()
+    check = "select * from follows where account1 = %s and account2 = %s"
+    result = cursor.execute(check,(id,session["username"]))
+    
+    if result > 0:
+        flash("You already follow that user", "danger")
+        return redirect(url_for("viewAllUsers"))
+    else:
+        query = "insert into follows values(%s, %s)" # account2 = Receiver ?
+        cursor.execute(query,(id,session["username"]))
+        mysql.connection.commit()
+        flash("Follow Success", "success")
+        return redirect(url_for("viewAllUsers"))
+
+# View All Requests
+@app.route("/viewDevStatus")
+@login_required
+def viewDevStatus():
+    cursor = mysql.connection.cursor()
+    query = "select * from request natural join requestofapp where account_id=%s "
+    result = cursor.execute(query,(session["username"],))
+    
+
+    if result > 0:
+        requests = cursor.fetchall()
+        return render_template("/subfiles/viewDevStatus.html", requests=requests)
+    else:
+        return render_template("/subfiles/viewDevStatus.html")
 
 
 # View All Requests
