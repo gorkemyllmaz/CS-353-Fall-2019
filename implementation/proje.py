@@ -46,6 +46,14 @@ class updateForm(Form):
     osVersion = IntegerField("Enter android version", validators=[validators.NumberRange(min=4, max=9)])
     category = StringField("Enter category", validators=[validators.Length(min=4, max=25)])
     description = StringField("Enter description", validators=[validators.Length(min=0, max=200)])
+
+class approveRestrictionForm(Form):
+    appName = StringField("Enter app name", validators=[validators.Length(min=4, max=25)])
+    ageRestriction = IntegerField("Enter age limit",validators=[validators.NumberRange(min=0, max=99)])
+    size = IntegerField("Enter size in Mb", validators=[validators.NumberRange(min=0, max=99)])
+    osVersion = IntegerField("Enter android version", validators=[validators.NumberRange(min=4, max=9)])
+    category = StringField("Enter category", validators=[validators.Length(min=4, max=25)])
+    description = StringField("Enter description", validators=[validators.Length(min=0, max=200)])
     
 #___________________________________________________________________________________________________________________
 app = Flask(__name__)
@@ -100,7 +108,7 @@ def upload():
 @login_required
 def viewAllApps():
     cursor = mysql.connection.cursor()
-    query = "select * from application where ref_account_id = %s"
+    query = "select * from application natural join category_has where ref_account_id = %s"
     result = cursor.execute(query,(session["username"],))
 
     if result > 0:
@@ -108,6 +116,95 @@ def viewAllApps():
         return render_template("/subfiles/apps.html", apps=apps)
     else:
         return render_template("/subfiles/apps.html")
+
+
+# View All Requests
+@app.route("/requests", methods=["GET", "POST"])
+@login_required
+def viewAllRequests():
+    cursor = mysql.connection.cursor()
+    query = "select * from request natural join requestofapp where request_status='pending'"
+    result = cursor.execute(query)
+    
+
+    if result > 0:
+        requests = cursor.fetchall()
+        return render_template("/subfiles/requests.html", requests=requests)
+    else:
+        return render_template("/subfiles/requests.html")
+
+# Reject A Request
+@app.route("/reject/<int:id>")
+@login_required
+def reject(id):
+    cursor = mysql.connection.cursor()
+    rejectQ = "update request set request_status='rejected' where request_id=%s"
+    cursor.execute(rejectQ, (id,))
+    mysql.connection.commit()
+    flash("Request rejected", "success")
+    return redirect(url_for("viewAllRequests"))
+
+# Approve With Restrictions
+@app.route("/approveRestriction/<int:id>", methods=["GET", "POST"])
+@login_required
+def approveRestriction(id):
+    if request.method == "GET":
+        cursor = mysql.connection.cursor()
+        query = "select * from application natural join category_has where app_name = (select app_name from requestofapp where request_id=%s)"
+        result = cursor.execute(query,(id,))
+
+        if result == 0:
+            flash("Either request does not exist or you cannot approve it", "danger")
+            return redirect(url_for("viewAllRequest"))
+        else:
+            app = cursor.fetchone()
+            form = approveRestrictionForm()
+            form.appName.data = app["app_name"]
+            form.ageRestriction.data = app["age_restriction"]
+            form.size.data = app["size"]
+            form.osVersion.data = app["os_version"]
+            form.category.data = app["category"]
+            return render_template("/subfiles/approveRestriction.html", form=form)
+    else:
+        cursor = mysql.connection.cursor()
+        form = approveRestrictionForm(request.form)
+        
+        appname = form.appName.data
+        newage = form.ageRestriction.data
+        newsize = form.size.data
+        newcat = form.category.data
+        
+        check = 'select * from category where category = %s'
+        result = cursor.execute(check, (newcat.lower(),))
+        if result == 0:
+            categoryInsert = 'insert into category values(%s)'
+            cursor.execute(categoryInsert, (newcat.lower(),))
+
+        query1 = 'update application set release_date=CURRENT_TIMESTAMP, age_restriction=%s, size=%s, application_status="approved_with_restrictions" where app_name=%s'
+        cursor.execute(query1, (newage,newsize,appname))
+
+        query3 = "update category_has set category=%s where app_name =%s"
+        cursor.execute(query3, (newcat.lower(),appname))
+
+        query2 = 'update request set request_status="approved_with_restrictions" where request_id=%s'
+        cursor.execute(query2, (id,))
+
+
+        mysql.connection.commit()
+        flash("Success", "success")
+        return redirect(url_for("viewAllRequests"))
+
+# Direct Approve
+@app.route("/directApprove/<int:id>")
+@login_required
+def directApprove(id):
+    cursor = mysql.connection.cursor()
+    approvedQuery = "update request set request_status='approved' where request_id=%s"
+    cursor.execute(approvedQuery, (id,))
+    mysql.connection.commit()
+    flash("Request approved", "success")
+    return redirect(url_for("viewAllRequests"))
+    
 
 # Delete App
 @app.route("/delete/<string:id>")
@@ -118,7 +215,7 @@ def delete(id):
     result = cursor.execute(query,(session["username"],))
 
     if result > 0:
-        deleteFromCat = "delete from category_has where app_name = %s" # ***************************************
+        deleteFromCat = "delete from category_has where app_name = %s"
         cursor.execute(deleteFromCat, (id,))
 
         deleteQuery = "delete from application where app_name = %s"
@@ -135,8 +232,8 @@ def delete(id):
 def update(id):
     if request.method == "GET":
         cursor = mysql.connection.cursor()
-        query = "select * from application where ref_account_id = %s"
-        result = cursor.execute(query,(session["username"],))
+        query = "select * from application natural join category_has where app_name = %s"
+        result = cursor.execute(query,(id,))
 
         if result == 0:
             flash("Either app does not exist or you cannot update it", "danger")
@@ -148,6 +245,7 @@ def update(id):
             form.ageRestriction.data = app["age_restriction"]
             form.size.data = app["size"]
             form.osVersion.data = app["os_version"]
+            form.category.data = app["category"]
             return render_template("/subfiles/update.html", form=form)
     else:
         cursor = mysql.connection.cursor()
@@ -158,16 +256,28 @@ def update(id):
         newos = form.osVersion.data
         newDescript = form.description.data
         newcat = form.category.data
+        
+        check = 'select * from category where category = %s'
+        result = cursor.execute(check, (newcat.lower(),))
+        if result == 0:
+            categoryInsert = 'insert into category values(%s)'
+            cursor.execute(categoryInsert, (newcat.lower(),))
 
+        
+        check2 = 'select * from application where app_name=%s'
+        result2 = cursor.execute(check2, (newName,))
+        if result2 == 0:
+            query1 = "update application set  release_date=CURRENT_TIMESTAMP, age_restriction=%s, size=%s, os_version=%s"
+            cursor.execute(query1, (newage,newsize,newos))
 
-        query = "update application set app_name=%s, age_restriction=%s, size=%s, os_version=%s"
-        cursor.execute(query, (newName,newage,newsize,newos))
-
-        query3 = "update category_has set category=%s,app_name=%s"
+        query3 = "update category_has set category=%s where app_name=%s"
         cursor.execute(query3, (newcat,newName))
 
         query2 = "insert into request values(NULL,%s, %s, %s)"
         cursor.execute(query2, (session["username"], "pending", newDescript))
+
+        query4 = "insert into requestofapp values(%s, NULL)" # SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSs
+        cursor.execute(query4, (newName,))
 
         
 
@@ -176,9 +286,6 @@ def update(id):
         return redirect(url_for("viewAllApps"))
 
             
-
-
-
 #Register Page
 @app.route("/register", methods=["GET", "POST"])
 def register():

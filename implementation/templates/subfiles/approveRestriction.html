@@ -1,0 +1,20 @@
+{% extends "editor.html" %}
+
+{% block body %}
+    {% from "includes/formhelpers.html" import render_field %}
+    <h3>Apply Restriction</h3>
+    <hr>
+    <div class="container">
+        <form method="post">
+            {{ render_field(form.appName, class="form-control", readonly=true) }}
+            {{ render_field(form.osVersion, class="form-control", readonly=true) }}
+            {{ render_field(form.description, class="form-control", readonly=true) }}
+            {{ render_field(form.ageRestriction, class="form-control") }}
+            {{ render_field(form.size, class="form-control") }}
+            {{ render_field(form.category, class="form-control") }}
+            
+            <button type="submit" class="btn btn-primary">Approve Request With Restriction</button>
+        </form>
+    </div>
+       
+{% endblock %}

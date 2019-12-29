@@ -6,7 +6,7 @@
     <hr>
 
     <form method="post">
-        {{ render_field(form.appName, class="form-control") }}
+        {{ render_field(form.appName, class="form-control", readonly=true) }}
         {{ render_field(form.ageRestriction, class="form-control") }}
         {{ render_field(form.size, class="form-control") }}
         {{ render_field(form.osVersion, class="form-control") }}

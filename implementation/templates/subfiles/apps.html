@@ -6,10 +6,10 @@
     <hr>
 
 {% if apps %}
-    <h4>Name---Developer---Date---Age Limit---Size---Status---Os Version</h4>
+    <h4>Name---Developer---Date---Age Limit---Size---Status---Os Version---Category</h4>
     <ul class="list-group">
         {% for app in apps %}
-        <li class="list-group-item">{{app.app_name}}---{{app.ref_account_id}}---{{app.release_date}}---{{app.age_restriction}}---{{app.size}}---{{app.application_status}}---{{app.os_version}}</li>
+        <li class="list-group-item">{{app.app_name}}---{{app.ref_account_id}}---{{app.release_date}}---{{app.age_restriction}}---{{app.size}}---{{app.application_status}}---{{app.os_version}}---{{app.category}}</li>
         <form method="post">
             <td><a href="/delete/{{app.app_name}}" class="btn btn-danger">Delete</a></td>
             <td><a href="/update/{{app.app_name}}" class="btn btn-info">Update</a></td>
