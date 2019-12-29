@@ -266,6 +266,8 @@ def reject(id):
     cursor = mysql.connection.cursor()
     rejectQ = "update request set request_status='rejected' where request_id=%s"
     cursor.execute(rejectQ, (id,))
+    query1 = "update application set application_status=%s where app_name=(select app_name from requestofapp where request_id=%s)"
+    cursor.execute(query1, ("rejected",id,))
     mysql.connection.commit()
     flash("Request rejected", "success")
     return redirect(url_for("viewAllRequests"))
@@ -327,10 +329,12 @@ def directApprove(id):
     cursor = mysql.connection.cursor()
     approvedQuery = "update request set request_status='approved' where request_id=%s"
     cursor.execute(approvedQuery, (id,))
+    query1 = "update application set application_status=%s where app_name=(select app_name from requestofapp where request_id=%s)"
+    cursor.execute(query1, ("approved",id,))
     mysql.connection.commit()
     flash("Request approved", "success")
     return redirect(url_for("viewAllRequests"))
-    
+
 
 # Delete App
 @app.route("/delete/<string:id>")
@@ -547,6 +551,6 @@ def download(appName):
     else:
         flash("Download Failed", "danger")
         return redirect(url_for("userApps"))
-        
+
 if __name__ == "__main__":
     app.run(debug=True)
