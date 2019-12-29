@@ -228,7 +228,7 @@ def follow(id):
         flash("Follow Success", "success")
         return redirect(url_for("viewAllUsers"))
 
-# View All Requests
+# View Dev Requests
 @app.route("/viewDevStatus")
 @login_required
 def viewDevStatus():
@@ -523,5 +523,30 @@ def logout():
     session.clear()
     return redirect(url_for("index"))
 
+
+# Download App
+@app.route("/download/<string:appName>")
+@login_required
+def download(appName):
+    cursor = mysql.connection.cursor()
+    query = "select * from device D, application A, user U where user_id=%s and D.os_version >= A.os_version and U.age >= A.age_restriction"
+    result = cursor.execute(query, (session["username"],))
+
+    if result > 0:
+        downloadCheck = "select * from downloads where app_name = %s and account_id = %s"
+        result2 = cursor.execute(downloadCheck, (appName, session["username"],))
+
+        if result2 == 0:
+            downloadQuery = "insert into downloads values(%s, %s, CURRENT_TIMESTAMP)"
+            cursor.execute(downloadQuery, (appName,session["username"],))
+            flash("Download Successful", "success")
+            return redirect(url_for("userApps"))
+        else:
+            flash("You have already downloaded", "info")
+            return redirect(url_for("userApps"))
+    else:
+        flash("Download Failed", "danger")
+        return redirect(url_for("userApps"))
+        
 if __name__ == "__main__":
     app.run(debug=True)
