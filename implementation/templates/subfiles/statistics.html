@@ -1,5 +1,42 @@
 {% extends "user.html" %}
 
 {% block body %}
+{% from "includes/formhelpers.html" import render_field %}
+    <h3>Application Statistics:</h3>
+    <hr>
+
+{% if downs %}
+    <h4>Download Count</h4>
+    <ul class="list-group">
+        {% for down in downs %}
+        <li class="list-group-item">{{down.download_count}}</li>
+        
+        {% endfor %}
+    </ul>
+{% else %}
+{% endif %}
+
+{% if rates %}
+    <h4>Average Rate</h4>
+    <ul class="list-group">
+        {% for rate in rates %}
+        <li class="list-group-item">{{rate.avg_rate}}</li>
+        
+        {% endfor %}
+    </ul>
+{% else %}
+{% endif %}
+
+{% if comments %}
+    <h4>All Comments</h4>
+    <ul class="list-group">
+        {% for comment in comments %}
+        <li class="list-group-item">{{comment.ref_account_id}}---{{comment.comment}}---{{comment.date}}</li>
+        
+        {% endfor %}
+    </ul>
+{% else %}
+{% endif %}
+
 
 {% endblock %}

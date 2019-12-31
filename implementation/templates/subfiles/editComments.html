@@ -1,0 +1,24 @@
+{% extends "user.html" %}
+
+{% block body %}
+{% from "includes/formhelpers.html" import render_field %}
+    <h3>Your Comments:</h3>
+    <hr>
+
+{% if comments %}
+    <h4>Application Name---Comment---Date</h4>
+    <ul class="list-group">
+        {% for comment in comments %}
+        <li class="list-group-item">{{comment.ref_app_name}}---{{comment.comment}}---{{comment.date}}</li>
+        <form method="post">
+            <td><a href="/updateComment/{{comment.comment_id}}" class="btn btn-primary">Edit Comment</a></td>
+            <td><a href="/deleteComment/{{comment.comment_id}}" class="btn btn-danger">Delete</a></td>
+        </form>
+        
+        {% endfor %}
+    </ul>
+{% else %}
+<div class="alert alert-danger">There are no apps on Doodle Play</div>
+{% endif %}
+
+{% endblock %}

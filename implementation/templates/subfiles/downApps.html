@@ -1,0 +1,26 @@
+{% extends "user.html" %}
+
+{% block body %}
+{% from "includes/formhelpers.html" import render_field %}
+    <h3>Downloaded Applications:</h3>
+    <hr>
+
+{% if downApps %}
+    <h4>Name---Date</h4>
+    <ul class="list-group">
+        {% for downApp in downApps %}
+        <li class="list-group-item">{{downApp.app_name}}---{{downApp.download_date}}</li>
+        <form method="post">
+            <td><a href="/download/{{downApp.app_name}}" class="btn btn-primary">Download</a></td>
+            <td><a href="/comment/{{downApp.app_name}}" class="btn btn-secondary">Comment</a></td>
+            <td><a href="/rate/{{downApp.app_name}}" class="btn btn-info">Rate</a></td>
+            <td><a href="/statistics/{{downApp.app_name}}" class="btn btn-success">See Statistics</a></td>
+        </form>
+        
+        {% endfor %}
+    </ul>
+{% else %}
+<div class="alert alert-danger">There are no apps on Doodle Play</div>
+{% endif %}
+
+{% endblock %}

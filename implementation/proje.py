@@ -55,6 +55,13 @@ class approveRestrictionForm(Form):
     category = StringField("Enter category", validators=[validators.Length(min=4, max=25)])
     description = StringField("Enter description", validators=[validators.Length(min=0, max=200)])
 
+# Apply Filter Form
+class applyFilterForm(Form):
+    ageRestriction = IntegerField("Enter age limit",validators=[validators.NumberRange(min=0, max=99),validators.DataRequired("This area cannot be blank")])
+    size = IntegerField("Enter size in Mb", validators=[validators.NumberRange(min=0, max=99),validators.DataRequired("This area cannot be blank")])
+    osVersion = IntegerField("Enter android version", validators=[validators.NumberRange(min=4, max=9),validators.DataRequired("This area cannot be blank")])
+    category = StringField("Enter category", validators=[validators.Length(min=4, max=25),validators.DataRequired("This area cannot be blank")])
+
 # Message Form
 class messageForm(Form):
     message = TextAreaField("Enter Message", validators=[validators.Length(min=0, max=300)])
@@ -62,6 +69,9 @@ class messageForm(Form):
 # Comment Form
 class commentForm(Form):
     comment = TextAreaField("Enter Comment", validators=[validators.Length(min=0, max=300)])
+# Rate Form
+class rateForm(Form):
+    rate = RadioField("Choose your rate", choices=[('1','Terrible'), ('2','Bad'), ('3','Okey'),('4','Good'),('5','Very Good')])
 #___________________________________________________________________________________________________________________
 app = Flask(__name__)
 # MySQL Connection
@@ -106,6 +116,7 @@ def upload():
         
         mysql.connection.commit()
         cursor.close()
+        flash("Upload succesful,","success")
         return redirect("developer")
 
     return render_template("/subfiles/upload.html", form=form)
@@ -137,6 +148,50 @@ def userApps():
         return render_template("/subfiles/userApps.html", apps=apps)
     else:
         return render_template("/subfiles/userApps.html")
+# View Downloaded Apps (USER)
+@app.route("/downApps", methods=["GET", "POST"])
+@login_required
+def downApps():
+    cursor = mysql.connection.cursor()
+    query = "select app_name,download_date from downloads where account_id =%s"
+    result = cursor.execute(query,(session["username"],))
+
+    if result > 0:
+        downApps = cursor.fetchall()
+        return render_template("/subfiles/downApps.html", downApps=downApps)
+    else:
+        return render_template("/subfiles/downApps.html")
+# View/Edit Comments (USER)
+@app.route("/editComments", methods=["GET", "POST"])
+@login_required
+def viewComments():
+    cursor = mysql.connection.cursor()
+    query = "select comment_id,ref_app_name,comment,date from comment where ref_account_id =%s"
+    result = cursor.execute(query,(session["username"],))
+
+    if result > 0:
+        comments = cursor.fetchall()
+        return render_template("/subfiles/editComments.html", comments=comments)
+    else:
+        return render_template("/subfiles/editComments.html")
+# Delete Comment
+@app.route("/deleteComment/<int:id>" ,methods=["GET", "POST"])
+@login_required
+def deleteComment(id):
+    print(id)
+    cursor = mysql.connection.cursor()
+    query = "select * from comment where comment_id= %s"
+    result = cursor.execute(query,(id,))
+
+    if result > 0:
+        deleteComm = "delete from comment where comment_id= %s"
+        cursor.execute(deleteComm, (id,))
+        mysql.connection.commit()
+        flash("You deleted your comment","success")
+        return redirect(url_for("viewComments"))
+    else:
+        flash("Either comment does not exist or you cannot delete it", "danger")
+        return redirect(url_for("viewComments"))
 
 # View All Users
 @app.route("/users", methods=["GET", "POST"])
@@ -185,7 +240,7 @@ def following():
 @login_required
 def messages():
     cursor = mysql.connection.cursor()
-    query = "select * from messages where account1 = %s" # account2 = Receiver ?
+    query = "select account2,message,date from messages where account1 = %s group by account2,message,date" # account2 = Receiver ?
     result = cursor.execute(query,(session["username"],))
 
     if result > 0:
@@ -210,6 +265,89 @@ def sendMessage(id):
         return redirect(url_for("viewAllUsers"))
     else:
         return render_template("/subfiles/sendMessage.html", form=form)
+ # Send Comment
+@app.route("/comment/<string:id>", methods=["GET", "POST"])
+@login_required
+def sendComment(id):
+    form = commentForm(request.form)
+
+    if request.method == "POST":
+        comment = form.comment.data
+        cursor = mysql.connection.cursor()
+        queryDown = "select * from downloads where app_name = %s and account_id =%s"
+        result = cursor.execute(queryDown,(id,session["username"],))
+
+        if result > 0:
+            query = "insert into comment values(NULL,%s,%s,%s,CURRENT_TIMESTAMP)"        
+            cursor.execute(query,(session["username"],id, comment,))
+            mysql.connection.commit()
+            flash("Comment Sent", "success")
+            return redirect(url_for("userApps"))
+        else:
+           flash("You have to download application first.", "danger")
+           return redirect(url_for("userApps"))
+    else:
+        return render_template("/subfiles/comment.html", form=form)
+# Update Comment
+@app.route("/updateComment/<string:id>", methods=["GET", "POST"])
+@login_required
+def updateComment(id):
+    form = commentForm(request.form)
+
+    if request.method == "POST":
+        comment = form.comment.data
+        cursor = mysql.connection.cursor()
+        queryDown = "update comment set comment =%s where comment_id = %s"
+        cursor.execute(queryDown,(comment,id,))
+        mysql.connection.commit()
+        flash("Comment Sent", "success")
+        return redirect(url_for("viewComments"))
+    else:
+        return render_template("/subfiles/updateComment.html", form=form)
+# Send Rate
+@app.route("/rate/<string:id>", methods=["GET", "POST"])
+@login_required
+def sendRate(id):
+    form = rateForm(request.form)
+
+    if request.method == "POST":
+        rate = form.rate.data
+        cursor = mysql.connection.cursor()
+        queryDown = "select * from downloads where app_name = %s and account_id =%s"
+        result = cursor.execute(queryDown,(id,session["username"],))
+
+        if result > 0:
+            query = "insert into rate values(NULL,%s,%s,%s,CURRENT_TIMESTAMP)"        
+            cursor.execute(query,(session["username"],id, rate,))
+            mysql.connection.commit()
+            flash("Rate Sent", "success")
+            return redirect(url_for("userApps"))
+        else:
+           flash("You have to download application first.", "danger")
+           return redirect(url_for("userApps"))
+    else:
+        return render_template("/subfiles/rate.html", form=form)
+# View App Statistics
+@app.route("/statistics/<string:id>", methods=["GET", "POST"])
+@login_required
+def viewAppStatistics(id):
+    cursor = mysql.connection.cursor()
+    query = "select count(app_name) as download_count from downloads where app_name = %s"
+    result = cursor.execute(query,(id,))
+    downs = cursor.fetchall()
+
+    query2 = "select avg(rating) as avg_rate from rate where ref_app_name = %s"
+    cursor.execute(query2,(id,))
+    rates = cursor.fetchall()
+
+    query3 = "select ref_account_id,comment,date from comment where ref_app_name = %s group by ref_account_id,comment,date"
+    cursor.execute(query3,(id,))
+    comments = cursor.fetchall()
+    if result > 0:
+        
+        return render_template("/subfiles/statistics.html", downs=downs, rates=rates,comments=comments)
+    else:
+        return render_template("/subfiles/statistics.html")
 # Follow
 @app.route("/follow/<string:id>")
 @login_required
@@ -454,6 +592,7 @@ def register():
         return render_template("register.html", form=form)
 
 
+
 # Login Page
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -533,24 +672,62 @@ def logout():
 @login_required
 def download(appName):
     cursor = mysql.connection.cursor()
-    query = "select * from device D, application A, user U where user_id=%s and D.os_version >= A.os_version and U.age >= A.age_restriction"
-    result = cursor.execute(query, (session["username"],))
+    query = "select * from  application A, user U where account_id=%s and U.age >= A.age_restriction and A.app_name = %s"
+    result = cursor.execute(query, (session["username"],appName,))
 
     if result > 0:
-        downloadCheck = "select * from downloads where app_name = %s and account_id = %s"
-        result2 = cursor.execute(downloadCheck, (appName, session["username"],))
+        queryOs = "select * from  device D, application A where D.user_id=%s and D.os_version >= A.os_version and A.app_name = %s"
+        resultos = cursor.execute(queryOs, (session["username"],appName,))
+        if resultos > 0:
 
-        if result2 == 0:
-            downloadQuery = "insert into downloads values(%s, %s, CURRENT_TIMESTAMP)"
-            cursor.execute(downloadQuery, (appName,session["username"],))
-            flash("Download Successful", "success")
-            return redirect(url_for("userApps"))
+
+            downloadCheck = "select * from downloads where app_name = %s and account_id = %s"
+            result2 = cursor.execute(downloadCheck, (appName, session["username"],))
+
+            if result2 == 0:
+                downloadQuery = "insert into downloads values(%s, %s, CURRENT_TIMESTAMP)"
+                cursor.execute(downloadQuery, (appName,session["username"],))
+                mysql.connection.commit()
+                flash("Download Successful", "success")
+                return redirect(url_for("userApps"))
+            else:
+                flash("You have already downloaded", "info")
+                return redirect(url_for("userApps"))
         else:
-            flash("You have already downloaded", "info")
+            flash("You cannot download this application to your device.","danger")
             return redirect(url_for("userApps"))
     else:
-        flash("Download Failed", "danger")
+        flash("Your age does not fit to download this application.", "danger")
         return redirect(url_for("userApps"))
+
+#Apply Filter
+@app.route("/applyFilter", methods=["GET", "POST"])
+def applyFilter():
+    form = applyFilterForm(request.form)
+
+    if request.method == "POST":
+        size = form.size.data
+        category = form.category.data
+        age = form.ageRestriction.data
+        os_version = form.osVersion.data
+        
+
+        cursor = mysql.connection.cursor()
+        query = "select * from application natural join category_has where size <= %s and age_restriction <=%s and category=%s and os_version <= %s"
+        
+        result = cursor.execute(query,(size, int(age), category, os_version,))
+        
+        if result > 0:
+            filters = cursor.fetchall()
+            flash("Filter applied", "success")
+            return render_template("/subfiles/filter.html", filters=filters)
+            
+        else:
+            flash("No Result", "danger")
+            return render_template("/subfiles/applyFilter.html", form=form)
+            
+    else:
+        return render_template("/subfiles/applyFilter.html", form=form)
 
 if __name__ == "__main__":
     app.run(debug=True)

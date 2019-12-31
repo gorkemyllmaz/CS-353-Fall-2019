@@ -2,11 +2,11 @@
 
 {% block body %}
 {% from "includes/formhelpers.html" import render_field %}
-<h3>Write Your Comment</h3>
+<h3>Write Your New Comment</h3>
 <hr>
 
 <form method="post">
     {{ render_field(form.comment, class="form-control") }}
-    <button type="submit" class="btn btn-primary">Send Comment</button>
+    <button type="submit" class="btn btn-primary">Update Comment</button>
 </form>
 {% endblock %}

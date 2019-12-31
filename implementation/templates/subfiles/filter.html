@@ -1,0 +1,23 @@
+{% extends "user.html" %}
+
+{% block body %}
+{% from "includes/formhelpers.html" import render_field %}
+    <h3>Filter Result:</h3>
+    <hr>
+
+{% if filters %}
+    <ul class="list-group">
+        {% for filter in filters %}
+        <h4>App Name---Developer---Category---Os Version---Age Limit---Size---Release Date</h4>
+        <li class="list-group-item"><a>{{filter.app_name}}---{{filter.ref_account_id}}---{{filter.category}}---{{filter.os_version}}---{{filter.age_restriction}}---{{filter.size}}---{{filter.release_date}}</a></li>
+        <form method="post">
+            <td><a href="/download/{{filter.app_name}}" class="btn btn-info">Download</a></td>
+        </form>
+        
+        {% endfor %}
+    </ul>
+{% else %}
+<div class="alert alert-danger">There are no apps found</div>
+{% endif %}
+
+{% endblock %}
