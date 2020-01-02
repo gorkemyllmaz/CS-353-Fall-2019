@@ -140,7 +140,13 @@ def viewAllApps():
 @login_required
 def userApps():
     cursor = mysql.connection.cursor()
-    query = "select * from application natural join category_has where application_status='approved' or application_status='approved_with_restrictions'"
+    query0 = "drop view if exists allApplications"
+    cursor.execute(query0)
+    mysql.connection.commit()
+    query1 = "create view allApplications as (select * from application natural join category_has where application_status='approved' or application_status='approved_with_restrictions')"
+    cursor.execute(query1)
+    mysql.connection.commit()
+    query = "select * from allApplications"
     result = cursor.execute(query)
 
     if result > 0:
@@ -212,7 +218,7 @@ def viewAllUsers():
 @login_required
 def followers():
     cursor = mysql.connection.cursor()
-    query = "select * from follows where account1 = %s" # account2 = Receiver ?
+    query = "select * from follows where account1 = %s" 
     result = cursor.execute(query,(session["username"],))
 
     if result > 0:
@@ -226,7 +232,7 @@ def followers():
 @login_required
 def following():
     cursor = mysql.connection.cursor()
-    query = "select * from follows where account2 = %s" # account2 = Receiver ?
+    query = "select * from follows where account2 = %s" 
     result = cursor.execute(query,(session["username"],))
 
     if result > 0:
@@ -240,7 +246,7 @@ def following():
 @login_required
 def messages():
     cursor = mysql.connection.cursor()
-    query = "select account2,message,date from messages where account1 = %s group by account2,message,date" # account2 = Receiver ?
+    query = "select account2,message,date from messages where account1 = %s group by account2,message,date" 
     result = cursor.execute(query,(session["username"],))
 
     if result > 0:
@@ -360,7 +366,7 @@ def follow(id):
         flash("You already follow that user", "danger")
         return redirect(url_for("viewAllUsers"))
     else:
-        query = "insert into follows values(%s, %s)" # account2 = Receiver ?
+        query = "insert into follows values(%s, %s)"
         cursor.execute(query,(id,session["username"]))
         mysql.connection.commit()
         flash("Follow Success", "success")
@@ -544,7 +550,7 @@ def update(id):
         query2 = "insert into request values(NULL,%s, %s, %s)"
         cursor.execute(query2, (session["username"], "pending", newDescript))
 
-        query4 = "insert into requestofapp values(%s, NULL)" # SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSs
+        query4 = "insert into requestofapp values(%s, NULL)"
         cursor.execute(query4, (newName,))
 
         
